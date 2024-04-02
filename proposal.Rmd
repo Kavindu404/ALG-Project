@@ -1,5 +1,5 @@
 ---
-title: "Sale Price Prediction of Ames Houses"
+title: "Sales Price Prediction of Ames Houses"
 output:
   pdf_document: default
   html_document:
