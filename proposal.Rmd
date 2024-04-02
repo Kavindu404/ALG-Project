@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Narrative
 
-There are many factors ranging from location, material quality, and property size, among many others, that may influence the sales price of a home. We aim to better understand how all these factors drive market prices in order to determine which features are relevant, given their relationship to sales price, as well as their collective impact on the accuracy of our predictions. The Ames dataset provides a comprehensive selection of these property features, which we can use to explore these questions. Our goal is to construct a model to analyze the selected parameters and assess their impact on price and to make predictions for different types of homes. Our results can be used to assist home sellers, policymakers, and real estate professionals in better identifying the most important factors influencing home prices.
+There are many factors ranging from location, material quality, and property size, among others, that may influence the sales price of a home. We aim to better understand how all these factors drive market prices in order to determine which features are relevant, given their relationship to sales price, as well as their collective impact on the accuracy of our predictions. The Ames dataset provides a comprehensive selection of these property features, which we can use to explore these questions. Our goal is to construct a model to analyze the selected parameters and assess their impact on price and to make predictions for different types of homes. We hypothesize that the variables `LotArea`, `Neighborhood`, `OverallQual`, and `OverallCond` are the most relevant predictors for the response variable `SalePrice`. We anticipate that a model comprised solely of these variables will lead to the smallest Root Mean Square Error (RMSE), thus indicating the most accurate predictions of home sale prices. Our results can be used to assist home sellers, policymakers, and real estate professionals in better identifying the most important factors influencing home prices.
 
 # Dataset Description
 
@@ -74,7 +74,7 @@ The full data set contains 766 homes and the following 28 variables:
 
 # Evidence of Data
 
-```{r}
+```{r, echo=FALSE}
 data = read.csv('ames_housing.csv')
 head(data, nrow=10)
 ```
