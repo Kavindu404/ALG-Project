@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Narrative
 
-There are many factors, ranging from location and material quality to property size, among many others, that may influence the sales price of a home. We aim to better understand how all these factors drive market prices in order to determine which features are relevant, given their relationship to sales price, as well as their collective impact on the accuracy of our predictions. The Ames dataset provides a comprehensive selection of these property features, which we can use to explore these questions. Our goal is to construct a model to analyze the selected parameters and assess their impact on price and to make predictions for different types of homes. Our results can be used to assist home sellers, policymakers, and real estate professionals in better identifying the most important factors influencing home prices.
+There are many factors, ranging from location, material quality, and property size, among many others, that may influence the sales price of a home. We aim to better understand how all these factors drive market prices in order to determine which features are relevant, given their relationship to sales price, as well as their collective impact on the accuracy of our predictions. The Ames dataset provides a comprehensive selection of these property features, which we can use to explore these questions. Our goal is to construct a model to analyze the selected parameters and assess their impact on price and to make predictions for different types of homes. Our results can be used to assist home sellers, policymakers, and real estate professionals in better identifying the most important factors influencing home prices.
 
 # Dataset Description
 
