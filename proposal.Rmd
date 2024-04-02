@@ -76,5 +76,5 @@ The full data set contains 766 homes and the following 28 variables:
 
 ```{r, echo=FALSE}
 data = read.csv('ames_housing.csv')
-head(data, nrow=10)
+head(data, n=10)
 ```
