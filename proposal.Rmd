@@ -1,0 +1,61 @@
+---
+title: "Sale Price Prediction of Ames Houses"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+author: 
+-   Ryan
+-   Keely Kinnane
+-   Sai Teja Yapuram
+-   Kavindu Wellalage
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Dictionary
+
+The full data set contains 766 homes and the following 28 variables:
+
+-   `LotArea`: Lot size in square feet. A numeric variable.
+-   `Neighborhood`: Physical location within Ames city limits. A categorical variable with the following levels:
+    -   "NAmes" : North Ames
+    -   "Sawyer" : Sawyer
+    -   "OldTown" : Old Town
+    -   "Edwards" : Edwards
+    -   "CollgCr" : College Creek
+-   `OverallQual`: Overall quality of the house's material and finish. The scale ranges from 1 (Very Poor) to 9 (Very Excellent). A numeric variable.
+-   `OverallCond`: Overall condition rating. The scale ranges from 1 (Very Poor) to 9 (Very Excellent). A numeric variable.
+-   `YearBuilt`: Original construction date. A numeric variable.
+-   `YearRemodAdd`: Remodel date. A numeric variable.
+-   `BsmtFinSf1`: Type 1 finished square feet. A numeric variable.
+-   `BsmtFinSf2`: Type 2 finished square feet. A numeric variable.
+-   `TotalBsmtSf`: Total square feet of basement area. A numeric variable.
+-   `FirstFlrSf`: First floor square feet. A numeric variable.
+-   `SecondFlrSf`: Second floor square feet. A numeric variable.
+-   `GrLivArea`: Above grade (ground) living area square feet. A numeric variable.
+-   `BsmtFullBath`: Number of full bathrooms in the basement. A numeric variable.
+-   `BsmtHalfBath`: Number of half baths in the basement. A numeric variable.
+-   `FullBath`: Number of full bathrooms above ground. A numeric variable.
+-   `HalfBath`: Number of half baths above ground. A numeric variable.
+-   `BedroomAbvGr`: Number of Bedrooms above ground. A numeric variable.
+-   `KitchenAbvGr`: Number of Kitchens above ground. A numeric variable.
+-   `TotRmsAbvGrd`: Total rooms above ground (does not include bathrooms). A numeric variable.
+-   `Fireplaces`: Number of fireplaces. A numeric variable. A numeric variable.
+-   `GarageCars`: Size of garage in car capacity. A numeric variable.
+-   `GarageArea`: Size of garage in square feet. A numeric variable.
+-   `WoodDeckSf`: Wood deck area in square feet. A numeric variable.
+-   `OpenPorchSf`: Open porch area in square feet. A numeric variable.
+-   `EnclosedPorch`: Enclosed porch area in square feet. A numeric variable.
+-   `ThreeSsnProch`: Three season porch area in square feet. A numeric variable.
+-   `ScreenPorch`: Screen porch area in square feet. A numeric variable.
+-   `SalePrice`: The property's sale price in dollars. A numeric response variable.
+
+# Evidence of Data
+
+```{r}
+data = read.csv('ames_housing.csv')
+head(data, nrow=10)
+```
