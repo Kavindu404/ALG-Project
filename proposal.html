@@ -9,13 +9,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Ryan" />
+<meta name="author" content="Ryan Croce" />
 <meta name="author" content="Keely Kinnane" />
 <meta name="author" content="Sai Teja Yapuram" />
 <meta name="author" content="Kavindu Wellalage" />
 
 
-<title>Sale Price Prediction of Ames Houses</title>
+<title>Assessing Home Price Determinants: A Regression Analysis of Ames Housing Data</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1623,8 +1623,9 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Sale Price Prediction of Ames Houses</h1>
-<h4 class="author">Ryan</h4>
+<h1 class="title toc-ignore">Assessing Home Price Determinants: A
+Regression Analysis of Ames Housing Data</h1>
+<h4 class="author">Ryan Croce</h4>
 <h4 class="author">Keely Kinnane</h4>
 <h4 class="author">Sai Teja Yapuram</h4>
 <h4 class="author">Kavindu Wellalage</h4>
@@ -1632,6 +1633,42 @@ display: none;
 </div>
 
 
+<div id="narrative" class="section level1">
+<h1>Narrative</h1>
+<p>There are many factors ranging from location, material quality,
+property size, and age, that influence the real estate market. The Ames
+data set provides a comprehensive selection of these property features
+that we can use to study there relationship and impact on home sales
+price. We aim to analyse the relationship of variables in the data set
+with the sale price as the response. We will explore which variables
+influence the most towards the sales price and we will further analyse
+how well each variable follow the LINE assumptions and how we can fix in
+case of an assumption is violated. Our results can be used to assist
+home sellers, policymakers, and real estate professionals better
+identify important factors in home prices.</p>
+</div>
+<div id="dataset-description" class="section level1">
+<h1>Dataset Description</h1>
+<p>The Ames Housing Data set curated by Dean De Cock from Truman State
+University. The original data set describes the sale of individual
+residential property in Ames, Iowa from 2006 to 2010. The original data
+set contains 2930 observations and a large number of explanatory
+variables (23 nominal, 23 ordinal, 14 discrete, and 20 continuous)
+involved in assessing home values. The version used for this project is
+a subset of the original data set that contains 766 homes and the 28
+variables. The subset is selected by following the steps given
+below.</p>
+<ul>
+<li><p>Removed large houses with an above ground living area of more
+than 1500 square feet.</p></li>
+<li><p>Filtered the data set to include houses that had a ‘Normal’ sales
+condition.</p></li>
+<li><p>Included the top five neighborhoods with the most houses for
+sale.</p></li>
+<li><p>Removed rows with <code>NA</code> values.</p></li>
+<li><p>Renamed a few variables to make their meaning clearer.</p></li>
+</ul>
+</div>
 <div id="data-dictionary" class="section level1">
 <h1>Data Dictionary</h1>
 <p>The full data set contains 766 homes and the following 28
