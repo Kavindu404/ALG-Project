@@ -1,11 +1,11 @@
 ---
-title: "Sales Price Prediction of Ames Houses"
+title: "Assessing Home Price Determinants: A Regression Analysis of Ames Housing Data"
 output:
   pdf_document: default
   html_document:
     df_print: paged
 author: 
--   Ryan
+-   Ryan Croce
 -   Keely Kinnane
 -   Sai Teja Yapuram
 -   Kavindu Wellalage
