@@ -15,6 +15,10 @@ author:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Narrative
+
+There are many factors ranging from location, material quality, property size, and age, that influence the real estate market. The Ames data set provides a comprehensive selection of these property features that we can use to study there relationship and impact on home sales price. We wish to build a model to make predictions about prices and provide insights about the key factors that influence them. Our results can be used to assist home sellers, policymakers, and real estate professionals better identify important factors in home prices.
+
 # Dataset Description
 
 The Ames Housing Data set curated by Dean De Cock from Truman State University. The original data set describes the sale of individual residential property in Ames, Iowa from 2006 to 2010. The original data set contains 2930 observations and a large number of explanatory
