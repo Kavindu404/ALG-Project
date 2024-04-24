@@ -1,6 +1,8 @@
 ---
 title: "Ames_Project"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 date: "2024-04-24"
 ---
 
@@ -38,8 +40,6 @@ data_train = data[train,]
 data_test = data[test,]
 ```
 
-
-
 ```{r}
 library(leaps)
 n = nrow(data_train)
@@ -48,24 +48,20 @@ n = nrow(data_train)
 mod_subsets = summary(regsubsets(SalePrice ~., data=data_train, nvmax=28))
 coef_names = colnames(mod_subsets$which)
 
-#Best model using AIC
-p = ncol(mod_subsets$which)
-mod_aic = n*log(mod_subsets$rss/n) + 2 * (2:p)
-best_aic_ind = which.min(mod_aic)
-coef_names[mod_subsets$which[best_aic_ind, ]]
+best_r2_ind = which.max(mod_subsets$adjr2)
+
+mod_subsets$which[best_r2_ind,]
 ```
 
-
 ```{r}
-subset_model = lm(SalePrice~ (LotArea + Neighborhood+ OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf 
-                  + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch), data=data_train)
+subset_model = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_train)
 
 summary(subset_model)
 
 ```
 
-
 ```{r}
+library(olsrr)
 #Condition Number and Condition Index
 round(ols_eigen_cindex(subset_model)[,1:2], 4)
 ```
@@ -75,3 +71,33 @@ library(faraway)
 vif(subset_model)
 ```
 
+## Constant Variance  
+
+```{r}
+ols_plot_resid_fit(subset_model)
+```
+
+Does not seems to be any violation to the constant variance. Further checking with the Breush-Pagan test:\
+
+```{r}
+library(lmtest)
+bptest(subset_model)
+```
+
+Fails to reject the null hypothesis. Therefore, the errors are homoscedastic. \
+
+## Linearity
+
+Note that the fitted vs residual plot is centered around 0, which suggests that it follows the linearity assumption.
+
+## Normality
+
+```{r}
+ols_plot_resid_qq(subset_model)
+```
+
+```{r}
+shapiro.test(resid(subset_model))
+```
+
+We fail to reject the Null hypothesis Therefore, the errors are normally distributed.
