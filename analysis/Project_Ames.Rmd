@@ -1,0 +1,77 @@
+---
+title: "Ames_Project"
+output: pdf_document
+date: "2024-04-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data = read.csv('ames_housing.csv')
+```
+
+```{r}
+#Converting Neighborhood into a categorical predictor
+
+data$Neighborhood = as.factor(data$Neighborhood)
+
+#Checking the structure again
+
+str(data)
+```
+
+```{r}
+#Data Splitting for variable selection
+
+# Random seed for reproducability
+
+set.seed(42)
+
+#Randomly sample 50% of the obsercation for training
+train = sample(1:nrow(data), round(.5*nrow(data)))
+
+test = -train
+
+data_train = data[train,]
+data_test = data[test,]
+```
+
+
+
+```{r}
+library(leaps)
+n = nrow(data_train)
+#Best subset selection
+
+mod_subsets = summary(regsubsets(SalePrice ~., data=data_train, nvmax=28))
+coef_names = colnames(mod_subsets$which)
+
+#Best model using AIC
+p = ncol(mod_subsets$which)
+mod_aic = n*log(mod_subsets$rss/n) + 2 * (2:p)
+best_aic_ind = which.min(mod_aic)
+coef_names[mod_subsets$which[best_aic_ind, ]]
+```
+
+
+```{r}
+subset_model = lm(SalePrice~ (LotArea + Neighborhood+ OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf 
+                  + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch), data=data_train)
+
+summary(subset_model)
+
+```
+
+
+```{r}
+#Condition Number and Condition Index
+round(ols_eigen_cindex(subset_model)[,1:2], 4)
+```
+
+```{r}
+library(faraway)
+vif(subset_model)
+```
+
