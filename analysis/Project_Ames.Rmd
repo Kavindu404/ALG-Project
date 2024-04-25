@@ -40,7 +40,7 @@ data_train = data[train,]
 data_test = data[test,]
 ```
 
-```{r}
+```{r, message=FALSE}
 library(leaps)
 n = nrow(data_train)
 #Best subset selection
@@ -53,35 +53,62 @@ best_r2_ind = which.max(mod_subsets$adjr2)
 mod_subsets$which[best_r2_ind,]
 ```
 
+
+## RMSE
 ```{r}
 subset_model = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_train)
 
 summary(subset_model)
 
+hypothesis_model = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond, data=data_train)
+
+full_model = lm(SalePrice ~., data=data_train)
+
 ```
 
 ```{r}
+calc_loocv_rmse = function(model) {
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+calc_loocv_rmse(subset_model)
+
+calc_loocv_rmse(hypothesis_model)
+```
+
+The hypothesized model has a larger RMSE so it is not a better model. Therefore we will choose the model selected through best subset selection.
+
+## Test Data
+
+```{r}
+test_model = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
+
+summary(test_model)
+```
+
+## Condition Number
+```{r, message=FALSE}
 library(olsrr)
 #Condition Number and Condition Index
-round(ols_eigen_cindex(subset_model)[,1:2], 4)
+round(ols_eigen_cindex(test_model)[,1:2], 4)
 ```
 
-```{r}
+```{r, message=FALSE}
 library(faraway)
-vif(subset_model)
+vif(test_model)
 ```
 
 ## Constant Variance  
 
 ```{r}
-ols_plot_resid_fit(subset_model)
+ols_plot_resid_fit(test_model)
 ```
 
 Does not seems to be any violation to the constant variance. Further checking with the Breush-Pagan test:\
 
-```{r}
+```{r, message=FALSE}
 library(lmtest)
-bptest(subset_model)
+bptest(test_model)
 ```
 
 Fails to reject the null hypothesis. Therefore, the errors are homoscedastic. \
@@ -93,11 +120,197 @@ Note that the fitted vs residual plot is centered around 0, which suggests that 
 ## Normality
 
 ```{r}
-ols_plot_resid_qq(subset_model)
+ols_plot_resid_qq(test_model)
 ```
 
 ```{r}
-shapiro.test(resid(subset_model))
+shapiro.test(resid(test_model))
 ```
 
-We fail to reject the Null hypothesis Therefore, the errors are normally distributed.
+We fail to reject the Null hypothesis at the 0.05 significance level. Therefore, the errors are normally distributed.
+
+## Highly Influential Points
+
+```{r}
+# Check for high leverage points
+which(hatvalues(test_model) > 2 * mean(hatvalues(test_model)))
+```
+
+Here we can see there are 28 high leverage points.
+
+```{r}
+# Check for outliers
+outlier_test_cutoff = function(test_model, alpha = 0.05) {
+    n = length(resid(test_model))
+    qt(alpha/(2 * n), df = df.residual(test_model) - 1, lower.tail = FALSE)
+}
+
+# vector of indices for observations deemed outliers.
+cutoff = outlier_test_cutoff(test_model, alpha = 0.05)
+
+which(abs(rstudent(test_model)) > cutoff)
+```
+There are 0 outliers.
+
+```{r}
+# Check for highly influential points
+which(cooks.distance(test_model) > 4 / length(cooks.distance(test_model)))
+```
+
+There are a total of 54 highly influential points.
+
+```{r}
+# Check to see how the model changes without the high influence points
+coef(test_model)
+# ids for non-influential observations
+noninfluential_ids = which(
+    cooks.distance(test_model) <= 4 / length(cooks.distance(test_model)))
+
+# fit the model on non-influential subset
+model_fix = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test,
+               subset = noninfluential_ids)
+
+# return coefficients
+coef(model_fix)
+```
+
+It seems the majority of the predictors don't change much when we remove the highly influential points, but there are a few that change quite a bit. For instance `NeighborhoodSawyer`, `NeighborhoodOldTown` and `OpenPorchSf` change by a lot.
+
+```{r}
+influential_obs = subset(data_test, cooks.distance(test_model) > 4 / length(cooks.distance(test_model)))
+
+# model includes influential observations
+predict(test_model, influential_obs)
+
+
+# model excludes influential observations
+predict(model_fix, influential_obs)
+```
+
+After removing the influential observations we can see that most of the highly influential points change by a few thousand dollars.
+
+## Retest LINE Assumptions
+## Condition Number
+```{r}
+#Condition Number and Condition Index
+round(ols_eigen_cindex(model_fix)[,1:2], 4)
+```
+
+```{r}
+vif(model_fix)
+```
+
+Here we can see that all predictors have a VIF less than 5. 
+
+## Constant Variance  
+
+```{r}
+ols_plot_resid_fit(model_fix)
+```
+
+Does not seems to be any violation to the constant variance. Further checking with the Breush-Pagan test:\
+
+```{r}
+bptest(model_fix)
+```
+
+Fails to reject the null hypothesis. Therefore, the errors are homoscedastic. \
+
+## Linearity
+
+Note that the fitted vs residual plot is centered around 0, which suggests that it follows the linearity assumption.
+
+## Normality
+
+```{r}
+ols_plot_resid_qq(model_fix)
+```
+
+```{r}
+shapiro.test(resid(model_fix))
+```
+We fail to reject the Null hypothesis at the 0.05 significance level. Therefore, the errors are normally distributed.
+
+## Analysis
+
+```{r}
+test_model = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
+
+summary(test_model)
+```
+
+First we will use an F-test to test if the regression is significant.
+The null and alternative hypotheses are:
+
+\[
+H_0: \beta_{\text{LotArea}}= \beta_{\text{NeighborhoodEdwards}}= ... =  \beta_{\text{ScreenPorch}} = 0 \qquad \text{vs.} \qquad H_1: \text{ At least one of the } \beta_j \text{ from the null is not 0}.
+\]
+
+The value of the F-test statistic is 143.1. <br>
+The p-value of the test is less than $2.2 \times 10^{-16}$. <br>
+We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
+We conclude that at least one of the predictors has a significant linear relationship with the `Sale Price`.
+
+Now we will test the significance of specific predictors from our hypothesis, which include `LotArea`, `Neighborhood`, `OverallQual`, `OverallCond`.
+
+Since `Neighboorhood` is categorical we will perform a nested model comparison with an F-test.
+
+```{r}
+restricted_neighborhood = lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
+
+anova(restricted_neighborhood, test_model)
+```
+
+The value of the F-test statistic is 10.584. <br>
+The p-value of the test is $4.078 \times 10^{-8}$. <br>
+We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
+As such, we reject the null hypothesis and conclude that there is a significant linear relationship between neighborhood and sales price, when the other predictors are in the model.
+
+```{r}
+summary(test_model)$coefficients
+```
+
+Here we can see that the Edwards neighborhood is significant at all significance levels, but the intercept for NAmes, Old Town and Sawyer neighborhoods are not significantly different from the intercept of CollgCr.
+
+Now we will check the significance of `LotArea`.
+
+```{r}
+restricted_lot = lm(SalePrice ~ Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
+
+anova(restricted_lot, test_model)
+```
+
+The value of the F-test statistic is 27.775. <br>
+The p-value of the test is $2.36 \times 10^{-7}$. <br>
+We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
+As such, we reject the null hypothesis and conclude that there is a significant linear relationship between lot area and sales price, when the other predictors are in the model.
+
+Now we will check the significance of `OverallQual`.
+
+```{r}
+restricted_qual = lm(SalePrice ~ LotArea + Neighborhood + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
+
+anova(restricted_qual, test_model)
+```
+
+The value of the F-test statistic is 84.295. <br>
+The p-value of the test is $3.486 \times 10^{-18}$. <br>
+We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
+As such, we reject the null hypothesis and conclude that there is a significant linear relationship between the overall quality and sales price, when the other predictors are in the model.
+
+Now we will check the significance of `OverallCond`.
+
+```{r}
+restricted_cond = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
+
+anova(restricted_cond, test_model)
+```
+
+The value of the F-test statistic is 87.545. <br>
+The p-value of the test is $9.262 \times 10^{-19}$. <br>
+We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
+As such, we reject the null hypothesis and conclude that there is a significant linear relationship between the overall condition and sales price, when the other predictors are in the model.
+
+## Most Significant Predictors
+
+
