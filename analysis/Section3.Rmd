@@ -115,33 +115,36 @@ summary(model_fix_aic)$coefficients
 
 Here we can see that the Edwards and NAmes neighborhoods are significant at the $\alpha = 0.05$ significance level, but the intercept for Old Town and Sawyer neighborhoods are not significantly different from the intercept of CollgCr at the $\alpha = 0.05$ significance level.
 
-Now we will check the significance of `LotArea`.
+Now we will check to see if our three other predictors are significant. In the following table it lists the other variables as well as their corresponding t-values and p-values, where significant p-values are in bold.
 
-```{r}
-restricted_lot = lm(SalePrice ~ + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
-
-anova(restricted_lot, model_fix_aic)
+```{r, echo=FALSE}
+options(knitr.kable.NA = '')
+data.frame("Predictor" = c("Lot Area", "Overall Quality", "Overall Condition"),
+           "t-value" = c("6.590","10.991", "9.971"),
+           "p-value" = c("**1.72e-10**","**< 2e-16**", "**< 2e-16**")) |>
+  knitr::kable()
 ```
 
-The value of the F-test statistic is 43.426 and the p-value of the test is $1.716 \times 10^{-10}$. So we will reject the null hypothesis at the $\alpha = 0.05$ significance level. As such, we reject the null hypothesis and conclude that there is a significant linear relationship between `Lot Area` and `Sales Price`, when the other predictors are in the
-model.
+As we can see from the table all three of these variables have p-values less than 0.05 which means that all three have a linearly significant relationship with `Sale Price` when the other predictors are in the model.
 
-Now we will check the significance of `OverallQual`.
+Finally we will look at the confidence intervals for the numerical predictors that we have been looking at in order to find the degree of certainty for this model.
 
-```{r}
-restricted_qual = lm(SalePrice ~ LotArea + Neighborhood + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
-
-anova(restricted_qual, model_fix_aic)
-```
-
-The value of the F-test statistic is 120.8 and the p-value of the test is less than  $2.2 \times 10^{-16}$. We will reject the null hypothesis at the $\alpha = 0.05$ significance level and conclude that there is a significant linear relationship between the `Overall Quality` and `Sale Price`, when the other predictors are in the model.
-
-Now we will check the significance of `OverallCond`.
 
 ```{r}
-restricted_cond = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+confint(model_fix_aic, parm = 'LotArea', level = 0.95)
 
-anova(restricted_cond, model_fix_aic)
+confint(model_fix_aic, parm = 'OverallQual', level = 0.95)
+
+confint(model_fix_aic, parm = 'OverallCond', level = 0.95)
+
 ```
 
-The value of the F-test statistic is 99.414.The p-value of the test is less than  $2.2 \times 10^{-16}$. We reject the null hypothesis at the $\alpha = 0.05$ significance level and conclude that there is a significant linear relationship between the `Overall Condition` and `Sale Price`, when the other predictors are in the model.
+```{r, echo=FALSE}
+options(knitr.kable.NA = '')
+data.frame("Predictor" = c("LotArea", "OverallQual", "OverallCond"),
+           "CI Interval" = c("(0.8689364, 1.608444)", "(5546.233, 7964.23)", "(3733.951, 5569.39)")) |>
+  knitr::kable()
+```
+
+Above is the table that shows us the 95\% confidence interval for each predictor. An interesting thing to note that we are 95\% confident that when a houses lot area increases by 1 square foot, and the other predictors remain the same, the average increase in the houses Sale Price is between \$0.87 and \$1.61. This means that with the addition of one square foot it will account for roughly \$1 to \$1.50 of the houses `Sale Price`. While that is not much on the small scale, when a house is larger than another house by a few hundred square feet it will greatly increase the `Sale Price`. It also seems that the overall quality score and overall condition score greatly influence the `Sale Price`, where our 95\% confidence interval shows us that with an increase by one point in each category it will increase the `Sale Price` of the house by \$5,546.23 to \$7,964.23 and \$3,733.95 to \$5,569.39 respectively.
+
