@@ -119,9 +119,14 @@ ols_plot_resid_qq(model_fix_aic)
 
 The final model after checking for collinearity, removing highly influential observations, and verifying the LINE assumptions:
 
+```{r}
+library(jtools)
+summ(model_fix_aic)
+```
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-library(stargazer)
-stargazer(model_fix_aic, type='text', digits = 2, title = 'Final Model', style = 'qje')
+#library(stargazer)
+#stargazer(model_fix_aic, type='text', digits = 2, title = 'Final Model', style = 'qje')
 ```
 
 
