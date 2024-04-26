@@ -40,7 +40,7 @@ Let's check how well the final model follow these assumptions.
 
 This can be visually inspected by looking at the fitted values vs residuals model. Let's first get the plot of residuals vs fitted values.
 
-```{r}
+```{r, message = FALSE}
 library(olsrr)
 
 ols_plot_resid_fit(model_fix_aic)
@@ -52,7 +52,7 @@ The residuals seems to be evenly spread and sums up to 0. Therefore, we can conc
 
 The constant variance assumption can be checked visually by looking at the spread of the residuals vs fitted values plot above. As the spread seems to be even, we can conclude that the constant variance assumption is not violated. To further confirm this, we can perform the Breush-Pagan test. Let's test the hypothesis at $\alpha = 0.05$ significance level.
 
-```{r}
+```{r, message = FALSE}
 library(lmtest)
 bptest(model_fix_aic)
 ```
@@ -75,10 +75,73 @@ shapiro.test(resid(model_fix_aic))
 
 The test statistic value is 0.9953 with the p-value is at 0.3544. Therefore, we fail to reject the null at $\alpha = 0.05$ significance level. Hence, we conclude that the errors follow a normal distribution.
 
-Overall we see that the final model follow the LINE assumptions. Next, let's look at the model fit.
+## Section 3
+
+Overall we conclude that the final model follow the LINE assumptions. Now we will look at the linear significance of the model we chose.
+
+```{r}
+summary(model_fix_aic)
+```
+
+The null and alternative hypotheses are:
+
+$$
+H_0: \beta_{\text{LotArea}}= \beta_{\text{NeighborhoodEdwards}}= ... =  \beta_{\text{ScreenPorch}} = 0 \qquad \text{vs.} \qquad H_1: \text{ At least one of the } \beta_j \text{ from the null is not 0}.
+$$
+
+The value of the F-test statistic is 194.9. The p-value of the test is less than $2.2 \times 10^{-16}$, so we will reject the null hypothesis at the $\alpha = 0.05$ significance level and conclude that at least one of the predictors has a significant linear relationship with the `Sale Price`.
+
+Next, let's look at the model fit.
 
 ```{r}
 summary(model_fix_aic)$r.squared
 ```
 
-We see that the final model is able to explain 93.07% observed variability in sales price of a home by the linear relationship between the predictors of the final model given above. This is important because having a high inalienability of the sales price of houses can lead to better valuation in the context of the business case.
+We see that the final model is able to explain 93.07% of the observed variability in sales price of a home by the linear relationship between the predictors of the final model given above. This is important because having a high inalienability of the sales price of houses can lead to better valuation in the context of the business case.
+
+Now we will test the significance of specific predictors from our hypothesis, which includes `LotArea`, `Neighborhood`, `OverallQual` and `OverallCond`. Since `Neighboorhood` is categorical we will perform a nested model comparison with an F-test.
+
+```{r}
+restricted_neighborhood = lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+
+anova(restricted_neighborhood, model_fix_aic)
+```
+
+The value of the F-test statistic is 15.842. The p-value of the test is $6.948 \times 10^{-12}$, so we will reject the null hypothesis at the $\alpha = 0.05$ significance level. As such, we reject the null hypothesis and conclude that there is a significant linear relationship between `Neighborhood` and `Sale Price`, when the other predictors are in the model.
+
+```{r}
+summary(model_fix_aic)$coefficients
+```
+
+Here we can see that the Edwards and NAmes neighborhoods are significant at the $\alpha = 0.05$ significance level, but the intercept for Old Town and Sawyer neighborhoods are not significantly different from the intercept of CollgCr at the $\alpha = 0.05$ significance level.
+
+Now we will check the significance of `LotArea`.
+
+```{r}
+restricted_lot = lm(SalePrice ~ + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+
+anova(restricted_lot, model_fix_aic)
+```
+
+The value of the F-test statistic is 43.426 and the p-value of the test is $1.716 \times 10^{-10}$. So we will reject the null hypothesis at the $\alpha = 0.05$ significance level. As such, we reject the null hypothesis and conclude that there is a significant linear relationship between `Lot Area` and `Sales Price`, when the other predictors are in the
+model.
+
+Now we will check the significance of `OverallQual`.
+
+```{r}
+restricted_qual = lm(SalePrice ~ LotArea + Neighborhood + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+
+anova(restricted_qual, model_fix_aic)
+```
+
+The value of the F-test statistic is 120.8 and the p-value of the test is less than  $2.2 \times 10^{-16}$. We will reject the null hypothesis at the $\alpha = 0.05$ significance level and conclude that there is a significant linear relationship between the `Overall Quality` and `Sale Price`, when the other predictors are in the model.
+
+Now we will check the significance of `OverallCond`.
+
+```{r}
+restricted_cond = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+
+anova(restricted_cond, model_fix_aic)
+```
+
+The value of the F-test statistic is 99.414.The p-value of the test is less than  $2.2 \times 10^{-16}$. We reject the null hypothesis at the $\alpha = 0.05$ significance level and conclude that there is a significant linear relationship between the `Overall Condition` and `Sale Price`, when the other predictors are in the model.
