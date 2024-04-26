@@ -4,6 +4,9 @@ output:
   html_document:
     df_print: paged
 date: "2024-04-24"
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -62,9 +65,8 @@ coef_names[mod_subsets$which[best_aic_ind,]]
 
 ```
 
-
-
 ## RMSE
+
 ```{r}
 
 subset_model_aic = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_train)
@@ -83,7 +85,7 @@ full_model = lm(SalePrice ~., data=data_train)
 calc_loocv_rmse = function(model) {
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
-
+hypothesis_model = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond, data=data_train)
 calc_loocv_rmse(subset_model_aic)
 
 calc_loocv_rmse(subset_model_r2)
@@ -91,7 +93,9 @@ calc_loocv_rmse(subset_model_r2)
 calc_loocv_rmse(hypothesis_model)
 ```
 
-The hypothesized model has a larger RMSE so it is not a better model. Therefore we will choose the model selected through best subset selection.
+The hypothesized model has a larger RMSE so it is not a better model.
+Therefore we will choose the model selected through best subset
+selection.
 
 ## Test Data
 
@@ -105,6 +109,7 @@ summary(test_model)
 ```
 
 ## Condition Number
+
 ```{r, message=FALSE}
 library(olsrr)
 #Condition Number and Condition Index
@@ -119,24 +124,26 @@ library(olsrr)
 round(ols_eigen_cindex(test_model_aic)[,1:2], 4)
 ```
 
-
 ```{r, message=FALSE}
 library(faraway)
 vif(test_model)
 ```
 
 ## TestModel AIC VIF
+
 ```{r}
 library(faraway)
 vif(test_model_aic)
 ```
 
-## Constant Variance  
+## Constant Variance
 
 ```{r}
 ols_plot_resid_fit(test_model)
 ```
-Does not seems to be any violation to the constant variance. Further checking with the Breush-Pagan test:\
+
+Does not seems to be any violation to the constant variance. Further
+checking with the Breush-Pagan test:\
 
 ## TestModelAIC Constant Variance
 
@@ -144,13 +151,13 @@ Does not seems to be any violation to the constant variance. Further checking wi
 ols_plot_resid_fit(test_model_aic)
 ```
 
-
 ```{r, message=FALSE}
 library(lmtest)
 bptest(test_model)
 ```
 
-Fails to reject the null hypothesis. Therefore, the errors are homoscedastic. \
+Fails to reject the null hypothesis. Therefore, the errors are
+homoscedastic.\
 
 ## TestModelAIC BPtest
 
@@ -159,11 +166,10 @@ library(lmtest)
 bptest(test_model_aic)
 ```
 
-
-
 ## Linearity
 
-Note that the fitted vs residual plot is centered around 0, which suggests that it follows the linearity assumption.
+Note that the fitted vs residual plot is centered around 0, which
+suggests that it follows the linearity assumption.
 
 ## Normality
 
@@ -175,12 +181,12 @@ ols_plot_resid_qq(test_model)
 shapiro.test(resid(test_model))
 ```
 
-We fail to reject the Null hypothesis at the 0.05 significance level. Therefore, the errors are normally distributed.
+We fail to reject the Null hypothesis at the 0.05 significance level.
+Therefore, the errors are normally distributed.
 
 ```{r}
 shapiro.test(resid(test_model_aic))
 ```
-
 
 ## Highly Influential Points
 
@@ -196,7 +202,6 @@ Here we can see there are 28 high leverage points.
 which(hatvalues(test_model_aic) > 2 * mean(hatvalues(test_model_aic)))
 ```
 
-
 ```{r}
 # Check for outliers
 outlier_test_cutoff = function(test_model, alpha = 0.05) {
@@ -209,6 +214,7 @@ cutoff = outlier_test_cutoff(test_model, alpha = 0.05)
 
 which(abs(rstudent(test_model)) > cutoff)
 ```
+
 There are 0 outliers.
 
 ```{r}
@@ -222,7 +228,6 @@ There are a total of 54 highly influential points.
 # Check for highly influential points
 which(cooks.distance(test_model_aic) > 4 / length(cooks.distance(test_model_aic)))
 ```
-
 
 ```{r}
 # Check to see how the model changes without the high influence points
@@ -239,7 +244,10 @@ model_fix = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + 
 coef(model_fix)
 ```
 
-It seems the majority of the predictors don't change much when we remove the highly influential points, but there are a few that change quite a bit. For instance `NeighborhoodSawyer`, `NeighborhoodOldTown` and `OpenPorchSf` change by a lot.
+It seems the majority of the predictors don't change much when we remove
+the highly influential points, but there are a few that change quite a
+bit. For instance `NeighborhoodSawyer`, `NeighborhoodOldTown` and
+`OpenPorchSf` change by a lot.
 
 ##Test Model AIC Removing Influential OBS and testing Normality
 
@@ -257,7 +265,6 @@ model_fix_aic = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCon
 shapiro.test(resid(model_fix_aic))
 ```
 
-
 ```{r}
 influential_obs = subset(data_test, cooks.distance(test_model) > 4 / length(cooks.distance(test_model)))
 
@@ -269,10 +276,13 @@ predict(test_model, influential_obs)
 predict(model_fix, influential_obs)
 ```
 
-After removing the influential observations we can see that most of the highly influential points change by a few thousand dollars.
+After removing the influential observations we can see that most of the
+highly influential points change by a few thousand dollars.
 
 ## Retest LINE Assumptions
+
 ## Condition Number
+
 ```{r}
 #Condition Number and Condition Index
 round(ols_eigen_cindex(model_fix)[,1:2], 4)
@@ -282,9 +292,9 @@ round(ols_eigen_cindex(model_fix)[,1:2], 4)
 vif(model_fix)
 ```
 
-Here we can see that all predictors have a VIF less than 5. 
+Here we can see that all predictors have a VIF less than 5.
 
-## Constant Variance  
+## Constant Variance
 
 ```{r}
 ols_plot_resid_fit(model_fix)
@@ -294,17 +304,20 @@ ols_plot_resid_fit(model_fix)
 ols_plot_resid_fit(model_fix_aic)
 ```
 
-Does not seems to be any violation to the constant variance. Further checking with the Breush-Pagan test:\
+Does not seems to be any violation to the constant variance. Further
+checking with the Breush-Pagan test:\
 
 ```{r}
 bptest(model_fix)
 ```
 
-Fails to reject the null hypothesis. Therefore, the errors are homoscedastic. \
+Fails to reject the null hypothesis. Therefore, the errors are
+homoscedastic.\
 
 ## Linearity
 
-Note that the fitted vs residual plot is centered around 0, which suggests that it follows the linearity assumption.
+Note that the fitted vs residual plot is centered around 0, which
+suggests that it follows the linearity assumption.
 
 ## Normality
 
@@ -315,7 +328,9 @@ ols_plot_resid_qq(model_fix)
 ```{r}
 shapiro.test(resid(model_fix))
 ```
-We fail to reject the Null hypothesis at the 0.05 significance level. Therefore, the errors are normally distributed.
+
+We fail to reject the Null hypothesis at the 0.05 significance level.
+Therefore, the errors are normally distributed.
 
 ## Analysis
 
@@ -328,18 +343,22 @@ summary(test_model)
 First we will use an F-test to test if the regression is significant.
 The null and alternative hypotheses are:
 
-\[
+$$
 H_0: \beta_{\text{LotArea}}= \beta_{\text{NeighborhoodEdwards}}= ... =  \beta_{\text{ScreenPorch}} = 0 \qquad \text{vs.} \qquad H_1: \text{ At least one of the } \beta_j \text{ from the null is not 0}.
-\]
+$$
 
-The value of the F-test statistic is 143.1. <br>
-The p-value of the test is less than $2.2 \times 10^{-16}$. <br>
-We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
-We conclude that at least one of the predictors has a significant linear relationship with the `Sale Price`.
+The value of the F-test statistic is 143.1. <br> The p-value of the test
+is less than $2.2 \times 10^{-16}$. <br> We reject the null hypothesis
+at the $\alpha = 0.05$ significance level. <br> We conclude that at
+least one of the predictors has a significant linear relationship with
+the `Sale Price`.
 
-Now we will test the significance of specific predictors from our hypothesis, which include `LotArea`, `Neighborhood`, `OverallQual`, `OverallCond`.
+Now we will test the significance of specific predictors from our
+hypothesis, which include `LotArea`, `Neighborhood`, `OverallQual`,
+`OverallCond`.
 
-Since `Neighboorhood` is categorical we will perform a nested model comparison with an F-test.
+Since `Neighboorhood` is categorical we will perform a nested model
+comparison with an F-test.
 
 ```{r}
 restricted_neighborhood = lm(SalePrice ~ LotArea + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + FirstFlrSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data=data_test)
@@ -347,16 +366,21 @@ restricted_neighborhood = lm(SalePrice ~ LotArea + OverallQual + OverallCond + Y
 anova(restricted_neighborhood, test_model)
 ```
 
-The value of the F-test statistic is 10.584. <br>
-The p-value of the test is $4.078 \times 10^{-8}$. <br>
-We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
-As such, we reject the null hypothesis and conclude that there is a significant linear relationship between neighborhood and sales price, when the other predictors are in the model.
+The value of the F-test statistic is 10.584. <br> The p-value of the
+test is $4.078 \times 10^{-8}$. <br> We reject the null hypothesis at
+the $\alpha = 0.05$ significance level. <br> As such, we reject the null
+hypothesis and conclude that there is a significant linear relationship
+between neighborhood and sales price, when the other predictors are in
+the model.
 
 ```{r}
 summary(test_model)$coefficients
 ```
 
-Here we can see that the Edwards neighborhood is significant at all significance levels, but the intercept for NAmes, Old Town and Sawyer neighborhoods are not significantly different from the intercept of CollgCr.
+Here we can see that the Edwards neighborhood is significant at all
+significance levels, but the intercept for NAmes, Old Town and Sawyer
+neighborhoods are not significantly different from the intercept of
+CollgCr.
 
 Now we will check the significance of `LotArea`.
 
@@ -366,10 +390,12 @@ restricted_lot = lm(SalePrice ~ Neighborhood + OverallQual + OverallCond + YearB
 anova(restricted_lot, test_model)
 ```
 
-The value of the F-test statistic is 27.775. <br>
-The p-value of the test is $2.36 \times 10^{-7}$. <br>
-We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
-As such, we reject the null hypothesis and conclude that there is a significant linear relationship between lot area and sales price, when the other predictors are in the model.
+The value of the F-test statistic is 27.775. <br> The p-value of the
+test is $2.36 \times 10^{-7}$. <br> We reject the null hypothesis at the
+$\alpha = 0.05$ significance level. <br> As such, we reject the null
+hypothesis and conclude that there is a significant linear relationship
+between lot area and sales price, when the other predictors are in the
+model.
 
 Now we will check the significance of `OverallQual`.
 
@@ -379,10 +405,12 @@ restricted_qual = lm(SalePrice ~ LotArea + Neighborhood + OverallCond + YearBuil
 anova(restricted_qual, test_model)
 ```
 
-The value of the F-test statistic is 84.295. <br>
-The p-value of the test is $3.486 \times 10^{-18}$. <br>
-We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
-As such, we reject the null hypothesis and conclude that there is a significant linear relationship between the overall quality and sales price, when the other predictors are in the model.
+The value of the F-test statistic is 84.295. <br> The p-value of the
+test is $3.486 \times 10^{-18}$. <br> We reject the null hypothesis at
+the $\alpha = 0.05$ significance level. <br> As such, we reject the null
+hypothesis and conclude that there is a significant linear relationship
+between the overall quality and sales price, when the other predictors
+are in the model.
 
 Now we will check the significance of `OverallCond`.
 
@@ -392,15 +420,14 @@ restricted_cond = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + YearBuil
 anova(restricted_cond, test_model)
 ```
 
-The value of the F-test statistic is 87.545. <br>
-The p-value of the test is $9.262 \times 10^{-19}$. <br>
-We reject the null hypothesis at the $\alpha = 0.05$ significance level. <br>
-As such, we reject the null hypothesis and conclude that there is a significant linear relationship between the overall condition and sales price, when the other predictors are in the model.
+The value of the F-test statistic is 87.545. <br> The p-value of the
+test is $9.262 \times 10^{-19}$. <br> We reject the null hypothesis at
+the $\alpha = 0.05$ significance level. <br> As such, we reject the null
+hypothesis and conclude that there is a significant linear relationship
+between the overall condition and sales price, when the other predictors
+are in the model.
 
 ## Most Significant Predictors
-
-
-
 
 ## Checking to see if the errors are independent
 
@@ -408,6 +435,5 @@ As such, we reject the null hypothesis and conclude that there is a significant 
 plot(data_train$YearBuilt, resid(test_model_aic), pch=20,
      xlab = 'YearBuilt', ylab='residuals')
 ```
+
 There doesn't seem to be a realtionship with the errors and year built.
-
-

@@ -1,0 +1,84 @@
+```{r}
+data = read.csv('ames_housing.csv')
+data$Neighborhood = as.factor(data$Neighborhood)
+
+set.seed(42)
+
+#Randomly sample 50% of the obsercation for training
+train = sample(1:nrow(data), round(.5*nrow(data)))
+
+test = -train
+
+data_train = data[train,]
+data_test = data[test,]
+
+test_model_aic = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test)
+
+noninfluential_ids = which(
+    cooks.distance(test_model_aic) <= 4 / length(cooks.distance(test_model_aic)))
+
+model_fix_aic = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+```
+
+```{r}
+summary(model_fix_aic)
+```
+
+The final model is only valid under few assumptions. They are:
+
+1.  **Linearity**
+
+2.  **Independence**
+
+3.  **Normality**
+
+4.  **Equal Variance**
+
+Let's check how well the final model follow these assumptions.
+
+### Linearity
+
+This can be visually inspected by looking at the fitted values vs residuals model. Let's first get the plot of residuals vs fitted values.
+
+```{r}
+library(olsrr)
+
+ols_plot_resid_fit(model_fix_aic)
+```
+
+The residuals seems to be evenly spread and sums up to 0. Therefore, we can conclude that the linearity assumption is not violated.
+
+### Constant Variance
+
+The constant variance assumption can be checked visually by looking at the spread of the residuals vs fitted values plot above. As the spread seems to be even, we can conclude that the constant variance assumption is not violated. To further confirm this, we can perform the Breush-Pagan test. Let's test the hypothesis at $\alpha = 0.05$ significance level.
+
+```{r}
+library(lmtest)
+bptest(model_fix_aic)
+```
+
+The test statistic is 22.916 and the p-value is 0.4657. Therefore, at $\alpha=0.05$ significant level, we fail to reject the null hypothesis. Thus, we conclude that the errors have a constant variance.
+
+### Normality
+
+The normality assumption can be checked graphically by looking at the Q-Q plots.
+
+```{r}
+ols_plot_resid_qq(model_fix_aic)
+```
+
+There seems to be a little deviation from the 45 degree line but overall it looks like the normality assumption is not violated. To further confirm this, we can use the Shapiro-Wilk test. Let's test the hypothesis at $\alpha = 0.05$ significance level.
+
+```{r}
+shapiro.test(resid(model_fix_aic))
+```
+
+The test statistic value is 0.9953 with the p-value is at 0.3544. Therefore, we fail to reject the null at $\alpha = 0.05$ significance level. Hence, we conclude that the errors follow a normal distribution.
+
+Overall we see that the final model follow the LINE assumptions. Next, let's look at the model fit.
+
+```{r}
+summary(model_fix_aic)$r.squared
+```
+
+We see that the final model is able to explain 93.07% observed variability in sales price of a home by the linear relationship between the predictors of the final model given above. This is important because having a high inalienability of the sales price of houses can lead to better valuation in the context of the business case.
