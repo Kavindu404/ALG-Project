@@ -1,0 +1,135 @@
+---
+title: "Section 2"
+output: pdf_document
+date: "2024-04-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Regression Analysis
+
+```{r, echo=FALSE, message=FALSE}
+library(knitr)
+library(olsrr)
+data = read.csv('ames_housing.csv')
+
+#Converting Neighborhood into a categorical predictor
+
+data$Neighborhood = as.factor(data$Neighborhood)
+
+```
+
+```{r, echo=FALSE}
+#Data Splitting for variable selection
+
+# Random seed for reproducability
+
+set.seed(42)
+
+#Randomly sample 50% of the obsercation for training
+train = sample(1:nrow(data), round(.5*nrow(data)))
+
+test = -train
+
+data_train = data[train,]
+data_test = data[test,]
+```
+
+```{r, echo=FALSE}
+test_model_aic = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test)
+
+```
+
+```{r, echo=FALSE}
+# ids for non-influential observations
+noninfluential_ids = which(
+    cooks.distance(test_model_aic) <= 4 / length(cooks.distance(test_model_aic)))
+```
+
+
+```{r, echo=FALSE}
+model_fix_aic = lm(SalePrice ~ LotArea + Neighborhood + OverallQual + OverallCond + YearBuilt + YearRemodAdd + BsmtFinSf1 + TotalBsmtSf + GrLivArea + BsmtFullBath + BsmtHalfBath + FullBath + BedroomAbvGr + KitchenAbvGr + TotRmsAbvGrd + Fireplaces + GarageCars + WoodDeckSf + OpenPorchSf + ScreenPorch, data = data_test, subset=noninfluential_ids)
+```
+
+
+
+The data set was split into a training and test set, so that we could perform valid inferences about the the relationship of certain predictors with the sales price of homes. We also ensured that the neighborhoods in the data set were appropriately identified as categorical predictors. We then began the process of variable selection by using the best subset method using both AIC and adjusted R2 for variable selection. The choice of the following selection procedure was due to the fact that its an exhaustive method that can check all possible models. The two models chosen from the search algorithm were then assessed using the rmseloocv, which gives us an estimate of the test rmse, to determine the best fitting model using this method.
+
+```{r, echo=FALSE}
+# Create a data frame with the values
+rmse_loocv <- data.frame(
+  Criterion = c("AIC", "Adjusted R^2", "Hypothesized Model"),
+  RMSEloocv = c(12417.59, 12465.33, 19399.57)
+)
+
+# Print the table
+kable(rmse_loocv, caption = "RMSEloocv for Quality Criterion")
+```
+
+The chosen model was the AIC model given its smaller RMSEloocv.
+
+
+Once chosen, the model was fit to the test data for further analysis. We first checked whether their were issues with collinearity since this would decrease the power of our hypothesis test. The condition number was 910, which seems to be due to the relationship between the categorical predictors. The VIFs, as shown in the table below, were all below 5, except for NeighborhoodOldTown, which again likely has to do with the relationship between the categorical predictors. We should be cautious about the large condition number, but since the VIFs are relatively low, we're not losing to much power relative to the uncorrelated case.
+
+```{r, echo=FALSE}
+# Define the VIF values for each variable
+vif_values = c(1.300574, 2.649184, 3.966050, 5.012429, 2.275655, 1.993924, 1.701585, 3.572031, 1.845922, 1.913897, 1.882527, 3.111682, 1.679272,1.112376, 1.772713, 1.996536, 1.570560, 2.874547, 1.344416, 1.335036, 1.170969, 1.164659, 1.146769
+)
+
+variable_names <- c(
+  "LotArea", "NeighborhoodEdwards", "NeighborhoodNAmes", 
+  "NeighborhoodOldTown", "NeighborhoodSawyer", "OverallQual", 
+  "OverallCond", "YearBuilt", "YearRemodAdd", "BsmtFinSF1", 
+  "TotalBsmtSF", "GrLivArea", "BsmtFullBath", "BsmtHalfBath", 
+  "FullBath", "BedroomAbvGr", "KitchenAbvGr", "TotRmsAbvGrd", 
+  "Fireplaces", "GarageCars", "WoodDeckSF", "OpenPorchSF", "ScreenPorch"
+)
+
+# Convert to data frame for tabulation
+vif_data_frame <- data.frame(
+  Variable = variable_names,
+  VIF = vif_values
+)
+
+# Use kable to create the table
+kable(vif_data_frame, caption = "VIF Values for Regression Variables")
+```
+
+The LINE assumptions were checked using the following plots and tests to determine if there were any violations. Our first analysis before checking for any highly influential observations showed that only the normality assumption was violated. The Shapiro-wilks test had a p-value of .03, leading us to reject the null hypothesis at the 5% significance level and conclude that the errors did not follow a normal distribution. The Q-Q plot also showed moderately discrepancies from the line at the tails as seen in the plot below.
+
+```{r, echo=FALSE, message=FALSE}
+library(lmtest)
+ols_plot_resid_qq(test_model_aic)
+```
+
+The highly influential observations were then removed from the model and the model assumptions were checked again. We concluded that the linearity assumption wasn't violated by checking the fitted versus residual plot, which showed that the residuals were centered around zero. The spread of the residuals remains constant, which suggest that the constant variance assumption holds. 
+
+```{r, echo=FALSE}
+ols_plot_resid_fit(model_fix_aic)
+```
+
+
+The Breush-Pagan test was used to validate what was suggested by the fitted versus residual plot. The reported p-value from the BP-test was .465, so we fail to reject the null hypothesis at any reasonable significance level and conclude that the errors are homoscedastic. The Q-Q plot was then checked after removing the highly influential points giving us the following plot. Observe that the tails closely follow the 45 degree line, suggesting normality is not violated. The p-value from the shapiro-wilk test was .35, so we again fail to reject the null hypothesis at any reasonable significance level and conclude that the errors follow a normal distribution. 
+
+```{r, echo=FALSE}
+ols_plot_resid_qq(model_fix_aic)
+```
+
+The final model after checking for collinearity, removing highly influential observations, and verifying the LINE assumptions:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(stargazer)
+stargazer(model_fix_aic, type='text', digits = 2, title = 'Final Model', style = 'qje')
+```
+
+
+
+
+
+
+#Code Appendix
+
+
+
